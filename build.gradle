@@ -1,0 +1,128 @@
+plugins {
+    id 'java-library'
+    id 'com.bmuschko.docker-remote-api' version '6.7.0'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(11)
+    }
+}
+
+group 'com.wickr'
+version '1.0-SNAPSHOT'
+
+wickr_docker_image = findProperty("wickr_docker_image")
+wickr_docker_name = findProperty("wickr_docker_name")
+
+wickr_config_dir = findProperty("wickr_config_dir")
+wickr_app_dir = findProperty("wickr_app_dir")
+
+wickr_bot = findProperty("wickr_bot")
+wickr_password = findProperty("wickr_password")
+wickr_api = findProperty("wickr_api") ?: UUID.randomUUID().toString()
+wickr_token = findProperty("wickr_token") ?: UUID.randomUUID().toString()
+wickr_port = findProperty("wickr_port")
+
+ssl_cert_path = findProperty("ssl_cert_path")
+ssl_key_path = findProperty("ssl_key_path")
+keystore_path = findProperty("keystore_path")
+keystore_password = findProperty("keystore_password") ?: ''
+keystore_type = findProperty("keystore_type")
+
+repositories {
+    mavenCentral()
+    maven {
+        url "https://maven.restlet.talend.com"
+    }
+}
+
+dependencies {
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.12.1'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.12.1'
+    implementation group: 'org.restlet.jse', name: 'org.restlet', version: '2.4.3'
+    implementation(group: 'com.github.docker-java', name: 'docker-java', version: '3.2.7') {
+        exclude group: 'com.github.docker-java', module: 'docker-java-transport-jersey'
+        exclude group: 'com.github.docker-java', module: 'docker-java-transport-netty'
+    }
+    implementation group: 'com.github.docker-java', name: 'docker-java-transport-httpclient5', version: '3.2.7'
+    implementation group: 'commons-io', name: 'commons-io', version: '2.8.0'
+    implementation group: 'org.apache.commons', name: 'commons-compress', version: '1.20'
+    implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.30'
+    implementation group: 'org.apache.httpcomponents.client5', name: 'httpclient5', version: '5.0.3'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.3.1'
+    testImplementation group: 'org.slf4j', name: 'slf4j-jdk14', version: '1.7.30'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.3.1'
+}
+
+test {
+    useJUnitPlatform()
+    systemProperty 'wickr_password', wickr_password
+    systemProperty 'javax.net.ssl.keyStore', file(keystore_path).getCanonicalPath()
+    systemProperty 'javax.net.ssl.keyStorePassword', keystore_password
+    systemProperty 'javax.net.ssl.keyStoreType', keystore_type
+    systemProperty 'javax.net.ssl.trustStore', file(keystore_path).getCanonicalPath()
+    systemProperty 'javax.net.ssl.trustStorePassword', keystore_password
+    systemProperty 'javax.net.ssl.trustStoreType', keystore_type
+    maxParallelForks = 1
+}
+
+clean.configure { dependsOn('cleanWickrIO') }
+
+task runServer(type: JavaExec) {
+    allJvmArgs = ["-Djavax.net.ssl.keyStore=${file(keystore_path)}", "-Djavax.net.ssl.keyStorePassword=${keystore_password}", "-Djavax.net.ssl.keyStoreType=${keystore_type}", "-Djavax.net.ssl.trustStore=${file(keystore_path)}", "-Djavax.net.ssl.trustStorePassword=${keystore_password}", "-Djavax.net.ssl.trustStoreType=${keystore_type}"]
+    classpath = sourceSets.test.runtimeClasspath
+    main = 'com.wickr.java.http.WickrBotServerTest'
+    debugOptions {
+        enabled = true
+        port = 5566
+        server = true
+        suspend = false
+    }
+}
+
+task pullWickrIO(type: Exec) {
+    commandLine 'docker', 'pull', wickr_docker_image
+}
+
+task cleanWickrIO(type: Delete, dependsOn: 'removeWickrIO') {
+    delete file(wickr_config_dir)
+    delete file(wickr_app_dir)
+}
+
+task removeWickrIO(type: Exec, dependsOn: 'stopWickrIO') {
+    commandLine 'docker', 'rm', wickr_docker_name
+    ignoreExitValue true
+}
+
+task stopWickrIO(type: Exec) {
+    commandLine 'docker', 'stop', wickr_docker_name
+    ignoreExitValue true
+}
+
+task queryWickrIO(type: Exec) {
+    commandLine 'curl', '--insecure', '--cert', file(ssl_cert_path), '--key', file(ssl_key_path), '-v', '-s', '-S', '-H', "Authorization: Basic ${wickr_token.bytes.encodeBase64().toString()}", "https://localhost:4001/WickrIO/V1/Apps/${wickr_api}/Statistics"
+}
+
+task runWickrIO(type: Exec, dependsOn: 'configureWickrIO') {
+    commandLine 'docker', 'run', '--rm', '-d', '-ti', '-p', '4001-4010:4001-4010', '-v', "${file(wickr_app_dir)}:/opt/WickrIO", "--name=${wickr_docker_name}", wickr_docker_image
+}
+
+task configureWickrIO(dependsOn: ['configureWickApp', 'copyCertsForSSL']) {
+    doFirst {
+        mkdir wickr_app_dir
+    }
+}
+
+task copyCertsForSSL(type: Copy) {
+    from ssl_cert_path
+    from ssl_key_path
+    into "${wickr_app_dir}/ssl"
+}
+
+task configureWickApp(type: Copy) {
+    from 'src/main/resources/wickrio/app'
+    into "${wickr_app_dir}"
+    include '**/*.ini'
+    expand(project.properties)
+}
