@@ -1,5 +1,10 @@
-# Compiled class file
+\# Compiled class file
 *.class
+
+# Gralde build 
+build/ 
+.gradle/
+gradle/
 
 # Log file
 *.log
