@@ -9,10 +9,9 @@ gradle/
 # Log file
 *.log
 
-# BlueJ files
+# ide files 
 *.ctxt
-
-# Mobile Tools for Java (J2ME)
+.idea/
 .mtj.tmp/
 
 # Package Files #
