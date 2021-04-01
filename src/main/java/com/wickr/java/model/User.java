@@ -2,7 +2,8 @@ package com.wickr.java.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class User implements Comparable<User> {

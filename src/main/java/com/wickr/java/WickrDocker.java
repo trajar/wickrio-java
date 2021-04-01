@@ -210,10 +210,7 @@ public class WickrDocker implements WickrComponent {
     public boolean isLocalHost() {
         if ("unix".equalsIgnoreCase(this.config.getDockerHost().getScheme())) {
             return true;
-        } else if ("localhost".equalsIgnoreCase(this.config.getDockerHost().getHost())) {
-            return true;
-        }
-        return false;
+        } else return "localhost".equalsIgnoreCase(this.config.getDockerHost().getHost());
     }
 
     public void pullImage() throws Exception {

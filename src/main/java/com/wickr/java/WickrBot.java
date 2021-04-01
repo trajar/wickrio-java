@@ -131,10 +131,7 @@ public class WickrBot implements Comparable<WickrBot> {
         if (null == this.containerHost || this.containerHost.isBlank()) {
             return false;
         }
-        if (this.containerPort <= 0) {
-            return false;
-        }
-        return true;
+        return this.containerPort > 0;
     }
 
     public WickrBot withPassword(final String pwd) {

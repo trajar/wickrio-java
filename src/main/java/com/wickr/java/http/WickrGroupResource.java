@@ -2,7 +2,6 @@ package com.wickr.java.http;
 
 import com.wickr.java.WickrBot;
 import com.wickr.java.model.Group;
-import com.wickr.java.model.Room;
 import com.wickr.java.model.User;
 import com.wickr.java.util.JsonUtils;
 import com.wickr.java.util.StringUtils;

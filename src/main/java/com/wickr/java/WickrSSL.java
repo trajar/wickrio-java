@@ -116,10 +116,7 @@ public class WickrSSL {
     }
 
     public boolean isEmpty() {
-        if (this.hasCert() || this.hasKeystore()) {
-            return false;
-        }
-        return true;
+        return !this.hasCert() && !this.hasKeystore();
     }
 
     public boolean hasCert() {

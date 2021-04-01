@@ -36,17 +36,13 @@ public class Statistics {
     }
 
     public boolean isEmpty() {
-        if (this.messageCount != null ||
-            this.pendingMessages != null ||
-            this.pendingCallbackMessages != null ||
-            this.sentCount != null ||
-            this.receivedCount != null ||
-            this.sentErrorsCount != null ||
-            this.receivedErrorsCount != null) {
-            return false;
-        } else {
-            return true;
-        }
+        return this.messageCount == null &&
+                this.pendingMessages == null &&
+                this.pendingCallbackMessages == null &&
+                this.sentCount == null &&
+                this.receivedCount == null &&
+                this.sentErrorsCount == null &&
+                this.receivedErrorsCount == null;
     }
 
     public boolean hasErrors() {

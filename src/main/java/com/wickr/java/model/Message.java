@@ -111,11 +111,7 @@ public class Message {
     }
 
     public boolean hasControl() {
-        if (null == this.control || this.control.isEmpty()) {
-            return false;
-        } else {
-            return true;
-        }
+        return null != this.control && !this.control.isEmpty();
     }
 
     public Number getTimeSentMilliseconds() {
